@@ -1,4 +1,6 @@
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 session_start();
 include("conexion.php");
 
@@ -8,29 +10,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST['email']);
     $password = $_POST['password'];
 
-    $stmt = $conn->prepare("SELECT id, nombre, empresa, password FROM usuarios WHERE email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $resultado = $stmt->get_result();
-
-    if ($resultado->num_rows === 1) {
-        $usuario = $resultado->fetch_assoc();
-
-        if (password_verify($password, $usuario['password'])) {
-            $_SESSION['usuario_id'] = $usuario['id'];
-            $_SESSION['usuario_nombre'] = $usuario['nombre'];
-            $_SESSION['usuario_empresa'] = $usuario['empresa'];
-
-            header("Location: panel.php");
-            exit();
-        } else {
-            $mensaje = "Contraseña incorrecta.";
-        }
+    if (empty($email) || empty($password)) {
+        $mensaje = "Debes completar todos los campos.";
     } else {
-        $mensaje = "No existe ninguna cuenta con ese correo.";
-    }
+        $consulta = pg_query_params(
+            $conn,
+            "SELECT id, nombre, empresa, password FROM usuarios WHERE email = $1",
+            array($email)
+        );
 
-    $stmt->close();
+        if ($consulta && pg_num_rows($consulta) === 1) {
+            $usuario = pg_fetch_assoc($consulta);
+
+            if (password_verify($password, $usuario['password'])) {
+                $_SESSION['usuario_id'] = $usuario['id'];
+                $_SESSION['usuario_nombre'] = $usuario['nombre'];
+                $_SESSION['usuario_empresa'] = $usuario['empresa'];
+
+                header("Location: panel.php");
+                exit();
+            } else {
+                $mensaje = "Contraseña incorrecta.";
+            }
+        } else {
+            $mensaje = "No existe ninguna cuenta con ese correo.";
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -84,3 +89,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 </body>
 </html>
+

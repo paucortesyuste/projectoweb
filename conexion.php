@@ -1,12 +1,7 @@
 <?php
-$host = "IP_PRIVADA_MYSQL";
-$user = "usuario";
-$pass = "password";
-$db   = "cyberguard";
+$conn = pg_connect("host=127.0.0.1 port=5432 dbname=cyberguard user=cyberuser password=1234");
 
-$conn = new mysqli($host, $user, $pass, $db);
-
-if ($conn->connect_error) {
-    die("Error de conexión: " . $conn->connect_error);
+if (!$conn) {
+    die("Error de conexión a PostgreSQL");
 }
 ?>

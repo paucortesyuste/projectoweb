@@ -15,32 +15,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $mensaje = "Todos los campos son obligatorios.";
         $tipo = "error";
     } else {
-        $stmt = $conn->prepare("SELECT id FROM usuarios WHERE email = ?");
-        $stmt->bind_param("s", $email);
-        $stmt->execute();
-        $stmt->store_result();
+        $consulta = pg_query_params($conn, "SELECT id FROM usuarios WHERE email = $1", array($email));
 
-        if ($stmt->num_rows > 0) {
+        if ($consulta && pg_num_rows($consulta) > 0) {
             $mensaje = "Ese correo ya está registrado.";
             $tipo = "error";
         } else {
             $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
-            $insert = $conn->prepare("INSERT INTO usuarios (nombre, empresa, email, password) VALUES (?, ?, ?, ?)");
-            $insert->bind_param("ssss", $nombre, $empresa, $email, $password_hash);
+            $insert = pg_query_params(
+                $conn,
+                "INSERT INTO usuarios (nombre, empresa, email, password) VALUES ($1, $2, $3, $4)",
+                array($nombre, $empresa, $email, $password_hash)
+            );
 
-            if ($insert->execute()) {
+            if ($insert) {
                 $mensaje = "Registro completado correctamente. Ya puedes iniciar sesión.";
                 $tipo = "success";
             } else {
                 $mensaje = "Error al registrar el usuario.";
                 $tipo = "error";
             }
-
-            $insert->close();
         }
-
-        $stmt->close();
     }
 }
 ?>
